@@ -35,6 +35,7 @@ class Occupant():
             return True
         return False
 
+    # REMOVE WHITESPACE AS WELLLLLLLLLLL
     def end_occupancy(self) -> bool:
         # if self.ref.value == 239125.0:
         #     print(self.end_date.value)
@@ -51,9 +52,11 @@ class Occupant():
                 # print(datetime.strptime(self.end_date.value, DATE_FORMAT))
                 # print(str(self.end_date.value))
                 datetime.strptime(str(self.end_date.value), DATE_FORMAT)
-            except:
+                # return True
+            except Exception as e:
                 try:
                     if self.ref.value == 239125.0:
+                        print(e)
                         print(str(self.end_date.value))
                         print("ok2")
                     datetime.strptime(str(self.end_date.value), DATE_FORMAT2)
