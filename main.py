@@ -47,6 +47,8 @@ DATE_FORMAT = "%d/%m/%Y"
 # it.locate_ref(235726, it.open_invoice("september22.xlsx"))
 
 # print(it.full_populate()[1].end_occupancy())
-# it.clean_with_end_date(it.full_populate(), it.open_invoice("september22.xlsx"))
-print(it.retrieve_invoice_month(it.open_invoice("september22.xlsx")))
+it.clean_with_end_date(it.full_populate(), it.open_invoice("september22.xlsx"))
+# print(it.retrieve_invoice_month(it.open_invoice("september22.xlsx")))
 # datetime.strptime("30/08/2022", DATE_FORMAT)
+# what = "hello {}".format("trial", "trial")
+# print(what)

@@ -1,8 +1,8 @@
 import openpyxl as xl
-from settings import INVOICES_FOLDER, MANAGEMENT, TEMPLATE_FOLDER
+import datetime
+from settings import INVOICES_FOLDER, MANAGEMENT, TEMPLATE_FOLDER, DATE_FORMAT2, DATE_FORMAT
 from Occupant import Occupant
 import os
-# import pandas as pd
 
 MONTHS = ["january", "february", "march", "april", "may", "june", "july", "august", "september", "october", "november", "december"]
 INVOICE_SHEET = "Brent TA Invoice (2)"
@@ -50,9 +50,10 @@ def full_populate() -> Occupant:
 
 def open_invoice(name):
     wb = xl.load_workbook(filename=INVOICES_FOLDER+name)
-    ws = wb[INVOICE_SHEET]
+    # ws = wb[INVOICE_SHEET]
 
-    return ws
+    # return ws
+    return wb
 
 def locate_occupant(occupant : Occupant, worksheet):
     pass
@@ -71,9 +72,28 @@ def locate_ref(ref : int, worksheet):
 # address, room no, room size, occupant, placement, start, end, no of nights, nightly rate ...
 def compare_row_occupant(occupant : Occupant, row) -> bool:
     invoice = create_delete_invoice_object(row)
-    if occupant.correct_end_invoice(invoice):
-        print(occupant.name.value, occupant.end_date.value, occupant.cleaned_end.month)
-        pass
+    if occupant.correct_invoice(invoice):
+        return True
+        # print(occupant.name.value, occupant.end_date.value, occupant.cleaned_end.month)
+    return False
+            
+def delete_rows(sheet, idx: int, amount: int = 1):
+    sheet.delete_rows(idx, amount)
+    merged_cells = [_ for _ in sheet.merged_cells.ranges]
+    for index, mcr in enumerate(merged_cells):
+        if idx < mcr.min_row:
+            if idx + amount - 1 >= mcr.min_row:
+                mcr.shrink(top=idx + amount - mcr.min_row)
+                if mcr.min_row > mcr.max_row:
+                    sheet.merged_cells.ranges.remove(mcr)
+                    continue
+            mcr.shift(row_shift=-amount)
+        elif idx <= mcr.max_row:
+            mcr.shrink(bottom=min(mcr.max_row - idx + 1, amount))
+        if mcr.min_row > mcr.max_row:
+            sheet.merged_cells.ranges.remove(mcr)
+
+def check_current_month_end() -> bool:
     pass
 
 def create_delete_invoice_object(row) -> Occupant:
@@ -93,17 +113,51 @@ def create_delete_invoice_object(row) -> Occupant:
     occ.end_occupancy()
     return occ
 
-def clean_with_end_date(occupants, worksheet):
+def clean_with_end_date(occupants, workbook):
+    ws = workbook[INVOICE_SHEET]
+    worksheet_month = retrieve_invoice_month(ws)
 
     for occupant in occupants:
         if occupant.end_occupancy():
-            for x in worksheet.columns:
-                for y in x:
-                    if y.value == occupant.name.value.rstrip():
-                        compare_row_occupant(occupant, worksheet[y.row])
-                        # collection.append(y.row)
-                        # return
-            pass
+            for x in ws["E"]:
+                if x.value == occupant.name.value.rstrip():
+                    if compare_row_occupant(occupant, ws[x.row]):
+                        if occupant.need_to_delete_invoice(worksheet_month):
+                            delete_rows(ws, x.row, 1)
+                        else:
+                            print("UPDATE ROW: ", occupant.name.value, ws["H"+str(x.row)].value.strftime(DATE_FORMAT), "--> ", occupant.cleaned_end.strftime(DATE_FORMAT))
+                            ws["H" + str(x.row)].value = occupant.cleaned_end
+                            
+    fix_formulas(ws)
+
+    workbook.save("invoices/september22Outcome.xlsx")
+
+def fix_formulas(ws):
+
+    # Number of nights
+    for nights in ws["I"]:
+        val = nights.value
+        if val is None:
+            continue
+        if nights.value[0] == "=":
+            row_num = str(nights.row)
+            nights.value = "="+"(H"+row_num+"-G"+row_num+")+1"
+
+    update_formula_tallys(ws, "K", "=J{}*I{}")
+    update_formula_tallys(ws, "L", "=K{}*0.125")
+    update_formula_tallys(ws, "M", "=K{}+L{}")
+
+def update_formula_tallys(ws_col, letter : str, formula : str):
+    for cell in ws_col[letter]:
+        val = cell.value
+        if val is None:
+            continue
+        if val[:4] == "=SUM":
+            cell.value = "=SUM("+letter+"1"+":"+letter+str(cell.row-1)+")"
+            continue
+        if val[0] == "=":
+            row_num = str(cell.row)
+            cell.value = formula.format(row_num, row_num)
 
 def retrieve_invoice_month(worksheet) -> int:
     month = str(worksheet["B6"].value).lower()
@@ -113,52 +167,38 @@ def retrieve_invoice_month(worksheet) -> int:
 
     return 1
 
-# def open_template_invoices():
-#     wb = xl.load_workbook(filename=TEMPLATE_FOLDER+"inv.xlsx")
-#     ws = wb.active
+
+
+# for x in worksheet.columns:
+#     print(x)
+# for y in x:
+#     if y.value == occupant.name.value.rstrip():
+#         if compare_row_occupant(occupant, worksheet[y.row]):
+#             if occupant.need_to_delete_invoice(current_month):
+#                 print("DELETE ROW: ", occupant.name.value)
+#             else:
+#                 print("UPDATE ROW: ", occupant.name.value)
+
+# def clean_with_end_date(occupants, worksheet):
+#     current_month = retrieve_invoice_month(worksheet)
 #
-#     new_wb = xl.Workbook()
-#     # new_wb.title = "sheets"
-#     new_ws = wb.active
+#     for occupant in occupants:
+#         if occupant.end_occupancy():
+#             for x in worksheet["E"]:
+#                 if x.value == occupant.name.value.rstrip():
+#                     if compare_row_occupant(occupant, worksheet[x.row]):
+#                         if occupant.need_to_delete_invoice(current_month):
+#                             print("DELETE ROW: ", occupant.name.value)
+#                         else:
+#                             print("UPDATE ROW: ", occupant.name.value)
 #
-#     # new_ws["1"] = ws["1"]
-#     # new_ws["2"] = ws["2"]
 #
-#     rows = new_ws.rows
-#
-#     # new_ws[1] = (cell.value for cell in ws[1])
-#     # new_ws[2] = (cell.value for cell in ws[2])
-#
-#     print(new_ws[1])
-#     print(new_ws[1][0])
-#
-#     for index, _ in enumerate(new_ws[1]):
-#         new_ws[1][index].value = ws[1][index].value
-#         # print(ws[1][index].font)
-#         # new_ws[1][index].value = ws[1][index].value
-#
-#     # for index, _ in enumerate(new_ws[2]):
-#         # new_ws[2][index].value = ws[2][index].value
-#
-#     # new_ws['1'] = (cell.value for cell in ws[1])
-#     # new_ws['2'] = (cell.value for cell in ws[2])
-#
-#     # for x in new_ws:
-#     #     print(x)
-#
-#     new_wb.save("trail.xlsx")
-#     # print(ws["1"])
-#     # print(new_ws["1"])
-#     # for x in ws["1"]:
-#     #     print(x.value)
-#
-# def better():
-#     xls = pd.read_excel(TEMPLATE_FOLDER+"inv.xlsx", engine="openpyxl", sheet_name=0, index_col=[0])
-#     print(xls.iloc[0])
-#
-# def open_invoices():
-#     wb = xl.load_workbook(filename=INVOICES_FOLDER+"trial")
-#     pass
-#
-# def clean_invoice():
-#     pass
+#             pass
+
+# def delete_row_with_merged_ranges(sheet, idx):
+#     sheet.delete_rows(idx)
+#     for mcr in sheet.merged_cells:
+#         if idx < mcr.min_row:
+#             mcr.shift(row_shift=-1)
+#         elif idx <= mcr.max_row:
+#             mcr.shrink(bottom=1)

@@ -1,8 +1,5 @@
 from datetime import datetime
-
-DATE_FORMAT = "%d/%m/%Y"
-# DATE_FORMAT2 = "%Y-%d-%m 00:00:00"
-DATE_FORMAT2 = "%Y-%m-%d 00:00:00"
+from settings import DATE_FORMAT, DATE_FORMAT2
 
 class Occupant():
 
@@ -38,10 +35,6 @@ class Occupant():
             return True
         return False
 
-    def clean_rate(self) -> int:
-
-        pass
-
     def end_occupancy(self) -> bool:
         if self.end_date.value is None:
             return False
@@ -68,7 +61,7 @@ class Occupant():
 
         return False
 
-    def correct_end_invoice(self, invoice):
+    def correct_invoice(self, invoice):
         # occupant and placement
         # NEED TO DO REF CHECK
         # if self.name.value != invoice.name.value or int(self.ref.value) != int(invoice.ref.value):
@@ -95,12 +88,19 @@ class Occupant():
         # print("pass4")
         # end date
         # STANDARDISE END DATE
-        if self.cleaned_end != invoice.cleaned_end:
-            return False
+        # if self.cleaned_end != invoice.cleaned_end:
+        #     return False
 
         # nightly rate
         if int(float(self.rate.value[1:])) != int(invoice.rate.value):
             return False
 
         # print("pass5")
+        return True
+
+    # true when the month is old now and needs to be deleted
+    # false when the month is the same. Need to update the current month instead
+    def need_to_delete_invoice(self, current_month) -> bool:
+        if self.cleaned_end.month == current_month:
+            return False
         return True
