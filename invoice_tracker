@@ -1,0 +1,19 @@
+import openpyxl as xl
+from settings import INVOICES_FOLDER, MANAGEMENT
+import os
+
+def open_tracker():
+    wb = xl.load_workbook(filename=MANAGEMENT)
+    # Worksheet is on default page
+    ws = wb.active
+
+
+    # rows = iter(ws.rows)
+    rows = ws.rows[2:]
+
+def open_invoices():
+    wb = xl.load_workbook(filename=INVOICES_FOLDER+"trial")
+    pass
+
+def clean_invoice():
+    pass
