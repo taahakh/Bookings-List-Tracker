@@ -4,6 +4,7 @@ from Occupant import Occupant
 import os
 # import pandas as pd
 
+MONTHS = ["january", "february", "march", "april", "may", "june", "july", "august", "september", "october", "november", "december"]
 INVOICE_SHEET = "Brent TA Invoice (2)"
 
 def open_tracker():
@@ -69,54 +70,48 @@ def locate_ref(ref : int, worksheet):
 
 # address, room no, room size, occupant, placement, start, end, no of nights, nightly rate ...
 def compare_row_occupant(occupant : Occupant, row) -> bool:
-    for cell in row:
-        # if cell.value is None:
-        #     break
-        if cell.value is None:
-            continue
-        print(cell.value)
+    invoice = create_delete_invoice_object(row)
+    if occupant.correct_end_invoice(invoice):
+        print(occupant.name.value, occupant.end_date.value, occupant.cleaned_end.month)
+        pass
     pass
+
+def create_delete_invoice_object(row) -> Occupant:
+    occ = Occupant(
+        row[0],  # address
+        row[2],  # room no
+        row[4],  # occupant
+        row[5],  # ref
+        row[3],  # room size
+        # row[5].value, # start
+        "00/00/00",
+        row[7],  # end
+        row[9]  # rate
+        # row[7].value  # nights
+    )
+
+    occ.end_occupancy()
+    return occ
 
 def clean_with_end_date(occupants, worksheet):
 
-    collection = []
-
     for occupant in occupants:
         if occupant.end_occupancy():
-            # print(occupant.ref.value)
-            # if occupant.ref.value == '239125.0':
-            # if occupant.ref == 239125:
-            #     print("SCFFFDFFF")
-            #     print(occupant.ref.value)
+            for x in worksheet.columns:
+                for y in x:
+                    if y.value == occupant.name.value.rstrip():
+                        compare_row_occupant(occupant, worksheet[y.row])
+                        # collection.append(y.row)
+                        # return
             pass
 
-    for x in worksheet.columns:
-        for y in x:
-            if y.value == 239125:
-                collection.append(y.row)
+def retrieve_invoice_month(worksheet) -> int:
+    month = str(worksheet["B6"].value).lower()
+    for i, mon in enumerate(MONTHS):
+       if mon == month:
+           return i+1
 
-    # for x in worksheet.rows:
-    #     for y in x:
-    #         if y.column == 1:
-    #             if "171 Wembley Hill" in str(y.value):
-    #                 collection.append(y)
-
-    print(collection)
-    for item in collection:
-        # for cell in worksheet[item]:
-        #     # if i == 1:
-        #     #     continue
-        #     # if cell.value is None:
-        #     #     break;
-        #     if cell.value is None:
-        #         continue
-        #     print(cell.value)
-        print(compare_row_occupant("", worksheet[item]))
-            
-        print("--------------------")
-        # print(worksheet[item])
-    pass
-
+    return 1
 
 # def open_template_invoices():
 #     wb = xl.load_workbook(filename=TEMPLATE_FOLDER+"inv.xlsx")
