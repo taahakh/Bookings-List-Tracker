@@ -52,13 +52,13 @@ class Occupant():
         # NEED TO DO REF CHECK
         # if self.name.value != invoice.name.value or int(self.ref.value) != int(invoice.ref.value):
         # if self.name.value != invoice.name.value or str(int(self.ref.value)) != str(invoice.ref.value):
-        if self.name.value != invoice.name.value:
+        if self.name.value.lstrip().rstrip() != invoice.name.value.lstrip().rstrip():
             return False
 
         # print("pass1")
         # address
         # not all address names that are meant to be the same are the same e.g road is rd in other document
-        if self.address.value.rstrip() not in invoice.address.value.rstrip():
+        if self.address.value.lstrip().rstrip() not in invoice.address.value.lstrip().rstrip():
             return False
 
         # print("pass2")
@@ -68,7 +68,7 @@ class Occupant():
 
         # print("pass3")
         # room size
-        if self.room_size.value.rstrip() not in invoice.room_size.value.rstrip():
+        if self.room_size.value.lstrip().rstrip() not in invoice.room_size.value.lstrip().rstrip():
             return False
 
         # print("pass4")
@@ -78,6 +78,10 @@ class Occupant():
         #     return False
 
         # nightly rate
+        # some nightly rates are missing
+        # when they are updated on the tracker, the code isn't going to pick up there is a
+        # current invoice already there. Reduce correct criteria to name, address, room no, room size
+        # there needs to be a function that searches for missing values and updates them when needed
         if int(float(self.rate.value[1:])) != int(invoice.rate.value):
             return False
 
@@ -91,8 +95,20 @@ class Occupant():
             return False
         return True
 
+    def compare_address(self, address) -> bool:
+        if str(self.address.value).lstrip().rstrip() not in str(address).lstrip().rstrip():
+            return False
+
+        return True
+
+    def compare_name(self, name) -> bool:
+        if str(self.name.value).lstrip().rstrip() != str(name).lstrip().rstrip():
+            return False
+
+        return True
+
     def compare_address_name(self, name, address) -> bool:
-        if str(self.address.value).rstrip() not in str(address).rstrip():
+        if str(self.address.value).lstrip().rstrip() not in str(address).lstrip().rstrip():
             return False
 
         if str(self.name.value).lstrip().rstrip() != str(name).lstrip().rstrip():
