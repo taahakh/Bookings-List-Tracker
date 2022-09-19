@@ -2,6 +2,7 @@ import openpyxl as xl
 import datetime
 from settings import INVOICES_FOLDER, MANAGEMENT, TEMPLATE_FOLDER, DATE_FORMAT2, DATE_FORMAT
 from Occupant import Occupant
+import calendar
 import os
 
 MONTHS = ["january", "february", "march", "april", "may", "june", "july", "august", "september", "october", "november", "december"]
@@ -55,20 +56,6 @@ def open_invoice(name):
     # return ws
     return wb
 
-def locate_occupant(occupant : Occupant, worksheet):
-    pass
-
-def locate_ref(ref : int, worksheet):
-    row_arr = []
-    counter = 0
-    for x in worksheet.rows:
-        if x[5].value == ref:
-            row_arr.append(x[5].row)
-            counter += 1
-
-    print(counter)
-    print(row_arr)
-
 # address, room no, room size, occupant, placement, start, end, no of nights, nightly rate ...
 def compare_row_occupant(occupant : Occupant, row) -> bool:
     invoice = create_delete_invoice_object(row)
@@ -120,12 +107,14 @@ def clean_with_end_date(occupants, workbook):
     for occupant in occupants:
         if occupant.end_occupancy():
             for x in ws["E"]:
+                # clean DATA with lstrip()
                 if x.value == occupant.name.value.rstrip():
                     if compare_row_occupant(occupant, ws[x.row]):
                         if occupant.need_to_delete_invoice(worksheet_month):
+                            # print("DELETE ROW: ", occupant.name.value)
                             delete_rows(ws, x.row, 1)
                         else:
-                            print("UPDATE ROW: ", occupant.name.value, ws["H"+str(x.row)].value.strftime(DATE_FORMAT), "--> ", occupant.cleaned_end.strftime(DATE_FORMAT))
+                            # print("UPDATE ROW: ", occupant.name.value, ws["H"+str(x.row)].value.strftime(DATE_FORMAT), "--> ", occupant.cleaned_end.strftime(DATE_FORMAT))
                             ws["H" + str(x.row)].value = occupant.cleaned_end
                             
     fix_formulas(ws)
@@ -167,38 +156,119 @@ def retrieve_invoice_month(worksheet) -> int:
 
     return 1
 
+def replace_date_col(ws_col, year : int, month : int, date : int):
+    for cell in ws_col:
+        if type(cell).__name__ == "MergedCell":
+            continue
+        if cell.is_date and cell.value is not None:
+            cell.value = datetime.datetime(year, month, date)
+
+def fix_date_cells(ws, f_cell, s_cell):
+    temp = s_cell.value
+    ws.unmerge_cells("G111:H111")
+    ws["H111"].number_format = "d/m/yyyy"
+    ws["H111"].font = ws["H111"].font.copy(size=12)
+    ws["H111"].value = temp
+    print(ws["G111"].value, ws["H111"].value)
+
+def fix_merged_cells_col(ws, to_merge, first_cell):
+    for cell in ws[to_merge]:
+        # print(ws[first_cell+str(cell.row)].value)
+        f_cell = ws[first_cell+str(cell.row)]
+        if f_cell.value == "Rental Period":
+            # print("Need to merge here")
+            ws.merge_cells(first_cell+str(cell.row)+":"+to_merge+str(cell.row))
+        elif f_cell.is_date:
+            for mc in ws.merged_cells.ranges:
+                if f_cell.coordinate in mc:
+                    fix_date_cells(ws, f_cell, ws[to_merge+str(cell.row)])
 
 
-# for x in worksheet.columns:
-#     print(x)
-# for y in x:
-#     if y.value == occupant.name.value.rstrip():
-#         if compare_row_occupant(occupant, worksheet[y.row]):
-#             if occupant.need_to_delete_invoice(current_month):
-#                 print("DELETE ROW: ", occupant.name.value)
-#             else:
-#                 print("UPDATE ROW: ", occupant.name.value)
+def maintain_current_new(workbook):
+    ws = workbook[INVOICE_SHEET]
 
-# def clean_with_end_date(occupants, worksheet):
-#     current_month = retrieve_invoice_month(worksheet)
+    occupants = full_populate()
+    ws_month = retrieve_invoice_month(ws)
+
+    # works out the date for the end of the month
+    end_day = calendar.monthrange(2022, ws_month)[1]
+
+    # document must replace start and end date to the first/last day of the month respectively
+
+    # occupants who are staying within this month, no further code is needed to update
+    # replacing beginning date and end date
+    replace_date_col(ws["G"], 2022, ws_month, 1)
+    replace_date_col(ws["H"], 2022, ws_month, end_day)
+
+    # we check those without an end date if they exist in the invoice
+    # those who DO NOT, a new row must be appended with Occupancy start date and end of the month
+    # for x in occupants:
+    #     if not x.end_occupancy():
+    #         exists = False
+    #         for cell in ws["E"]:
+    #             # if cell is None:
+    #             #     continue
+    #             if str(cell.value).lstrip().rstrip() == x.name.value.lstrip().rstrip():
+    #                 # we check if its the same, we can break from the loop
+    #                 if compare_row_occupant(x, ws[cell.row]):
+    #                     exists = True
+    #                     print("EXISTS: " + x.name.value)
+    #                     break
+    #         # if it doesn't exist, we need to add row
+    #         if not exists:
+    #             print("----------> NOT EXISTS: " + x.name.value)
+
+            # print(x.name.value.lstrip().rstrip())
+
+    # those who already exist, we do nothing
+
+    mcr = ws.merged_cells.ranges
+    # mcr = ws.merged_cells
+    # for mc in mcr:
+    #     # print(mc)
+    #     mc.shift(0,10)
+    #
+    ws.insert_rows(9, 10)
+    # ws.move_range("A9:M153", rows=10)
+    # need to fix merged cells [address col, rental period box]
+
+    fix_formulas(ws)
+
+    fix_merged_cells_col(ws, "H", "G")
+
+    # fix_date_cells(ws)
+
+    # for item in ws["B"]:
+    #     print(str(item.value) + " --> " + str(item))
+
+    print(ws["G111"], ws["H111"])
+    # temp = ws["H111"].value
+    # ws.unmerge_cells("G111:H111")
+    # ws["H111"].number_format = "d/m/yyyy"
+    # ws["H111"].font = ws["H111"].font.copy(size=12)
+    # ws["H111"].value = temp
+    # print(ws["G111"].value, ws["H111"].value)
+
+    workbook.save("invoices/september22Outcome.xlsx")
+
+
+# def locate_occupant(occupant : Occupant, worksheet):
+#     pass
 #
-#     for occupant in occupants:
-#         if occupant.end_occupancy():
-#             for x in worksheet["E"]:
-#                 if x.value == occupant.name.value.rstrip():
-#                     if compare_row_occupant(occupant, worksheet[x.row]):
-#                         if occupant.need_to_delete_invoice(current_month):
-#                             print("DELETE ROW: ", occupant.name.value)
-#                         else:
-#                             print("UPDATE ROW: ", occupant.name.value)
+# def locate_ref(ref : int, worksheet):
+#     row_arr = []
+#     counter = 0
+#     for x in worksheet.rows:
+#         if x[5].value == ref:
+#             row_arr.append(x[5].row)
+#             counter += 1
 #
-#
-#             pass
+#     print(counter)
+#     print(row_arr)
 
-# def delete_row_with_merged_ranges(sheet, idx):
-#     sheet.delete_rows(idx)
-#     for mcr in sheet.merged_cells:
-#         if idx < mcr.min_row:
-#             mcr.shift(row_shift=-1)
-#         elif idx <= mcr.max_row:
-#             mcr.shrink(bottom=1)
+# # Credit augustomen STACKOVERFLOW
+# def last_day_of_month(any_day):
+#     # The day 28 exists in every month. 4 days later, it's always next month
+#     next_month = any_day.replace(day=28) + datetime.timedelta(days=4)
+#     # subtracting the number of the current day brings us back one month
+#     return next_month - datetime.timedelta(days=next_month.day)

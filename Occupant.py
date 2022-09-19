@@ -3,15 +3,6 @@ from settings import DATE_FORMAT, DATE_FORMAT2
 
 class Occupant():
 
-    # address = ""
-    # room = 0
-    # name = ""
-    # ref = 0
-    # room_size = ""
-    # start_date = ""
-    # end_date = ""
-    # rate = ""
-    # number_of_nights = 0
     cleaned_end = ""
 
     def __init__(self, address, room, name, ref, room_size, start_date, end_date, rate, number_of_nights=31):
@@ -24,11 +15,6 @@ class Occupant():
         self.end_date = end_date
         self.rate = rate
         self.number_of_nights = number_of_nights
-        # self.cleaned_end = ""
-
-    # def __init__(self, name, ref):
-    #     self.name = name
-    #     self.ref = ref
 
     def equals(self, occupant) -> bool:
         if self.address.__eq__(occupant.address) and self.room == occupant.room and self.name.__eq__(occupant.name) and self.ref == occupant.ref and self.room_size.__eq__(occupant.room_size) and self.start_date.__eq_(occupant.start_date) and self.end_date.__eq_(occupant.end_date) and self.rate.__eq_(occupant.rate) and self.number_of_nights.__eq_(occupant.number_of_nights):
