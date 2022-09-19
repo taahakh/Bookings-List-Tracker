@@ -90,3 +90,12 @@ class Occupant():
         if self.cleaned_end.month == current_month:
             return False
         return True
+
+    def compare_address_name(self, name, address) -> bool:
+        if str(self.address.value).rstrip() not in str(address).rstrip():
+            return False
+
+        if str(self.name.value).lstrip().rstrip() != str(name).lstrip().rstrip():
+            return False
+
+        return True
