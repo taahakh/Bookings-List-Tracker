@@ -1,0 +1,74 @@
+{
+ "1: 13 St Augustine's Ave: Mr Raami Hassan Baadle": [
+  "13 St Augustine's Ave",
+  6.0,
+  "Mr Raami Hassan Baadle",
+  238217.0,
+  "Triple",
+  "10/06/2022",
+  "None",
+  "£35.00",
+  31,
+  ""
+ ],
+ "2: 13 St Augustine's Ave: Ms Amina Weheliye": [
+  "13 St Augustine's Ave",
+  3.0,
+  "Ms Amina Weheliye",
+  238020.0,
+  "Double",
+  "10/06/2022 ",
+  "None",
+  "£70.00",
+  31,
+  ""
+ ],
+ "3: 13 St Augustine's Ave: Ms Husseini": [
+  "13 St Augustine's Ave",
+  5.0,
+  "Ms Husseini",
+  237316.0,
+  "Double",
+  "14/06/2022 ",
+  "None",
+  "£35.00",
+  31,
+  ""
+ ],
+ "4: 13 St Augustine's Ave: Ms Yvonne Mcqueen": [
+  "13 St Augustine's Ave",
+  1.0,
+  "Ms Yvonne Mcqueen",
+  "TBP",
+  "Double",
+  "14/06/2022 ",
+  "None",
+  "£70.00",
+  31,
+  ""
+ ],
+ "5: 13 St Augustine's Ave: Mr Khaled Hamed": [
+  "13 St Augustine's Ave",
+  4.0,
+  "Mr Khaled Hamed",
+  238423.0,
+  "Double",
+  "05/07/2022 ",
+  "None",
+  "£35.00",
+  31,
+  ""
+ ],
+ "6: 13 St Augustine's Ave: Enley-Otti": [
+  "13 St Augustine's Ave",
+  2.0,
+  "Enley-Otti",
+  238642.0,
+  "Double",
+  "05/07/2022 ",
+  "None",
+  "£35.00",
+  31,
+  ""
+ ]
+}

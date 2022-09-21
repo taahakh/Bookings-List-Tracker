@@ -5,7 +5,7 @@ import inv_tracker as it
 import os
 from datetime import datetime
 
-it.maintain_current_new(it.open_invoice("september22.xlsx"))
+it.maintain_current_new(it.open_invoice("september22.xlsx"), debug=True)
 # it.clean_with_end_date(it.full_populate(), it.open_invoice("september22.xlsx"))
 
 # DATA IS NOT PROPERLY CLEANED

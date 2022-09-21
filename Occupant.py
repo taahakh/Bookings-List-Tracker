@@ -4,6 +4,7 @@ from settings import DATE_FORMAT, DATE_FORMAT2
 class Occupant():
 
     cleaned_end = ""
+    # cleaned_end : datetime.datetime
 
     def __init__(self, address, room, name, ref, room_size, start_date, end_date, rate, number_of_nights=31):
         self.address = address
@@ -21,13 +22,12 @@ class Occupant():
             return True
         return False
 
+    # openpyxl has function is_date(). Could be a better implementation + faster.
     def end_occupancy(self) -> bool:
         if self.end_date.value is None:
             return False
 
-        cleaned_date = str(self.end_date.value).rstrip()
-
-        # print(cleaned_date)
+        cleaned_date = str(self.end_date.value).lstrip().rstrip()
 
         if len(cleaned_date) != 0:
             try:
@@ -52,13 +52,13 @@ class Occupant():
         # NEED TO DO REF CHECK
         # if self.name.value != invoice.name.value or int(self.ref.value) != int(invoice.ref.value):
         # if self.name.value != invoice.name.value or str(int(self.ref.value)) != str(invoice.ref.value):
-        if self.name.value.lstrip().rstrip() != invoice.name.value.lstrip().rstrip():
+        if self.name.value.lstrip().rstrip().lower() != invoice.name.value.lstrip().rstrip().lower():
             return False
 
         # print("pass1")
         # address
         # not all address names that are meant to be the same are the same e.g road is rd in other document
-        if self.address.value.lstrip().rstrip() not in invoice.address.value.lstrip().rstrip():
+        if self.address.value.lstrip().rstrip().lower() not in invoice.address.value.lstrip().rstrip().lower():
             return False
 
         # print("pass2")
@@ -68,7 +68,7 @@ class Occupant():
 
         # print("pass3")
         # room size
-        if self.room_size.value.lstrip().rstrip() not in invoice.room_size.value.lstrip().rstrip():
+        if self.room_size.value.lstrip().rstrip().lower() not in invoice.room_size.value.lstrip().rstrip().lower():
             return False
 
         # print("pass4")
@@ -96,22 +96,27 @@ class Occupant():
         return True
 
     def compare_address(self, address) -> bool:
-        if str(self.address.value).lstrip().rstrip() not in str(address).lstrip().rstrip():
+        if str(self.address.value).lstrip().rstrip().lower() not in str(address).lstrip().rstrip().lower():
             return False
 
         return True
 
     def compare_name(self, name) -> bool:
-        if str(self.name.value).lstrip().rstrip() != str(name).lstrip().rstrip():
+        if str(self.name.value).lstrip().rstrip().lower() != str(name).lstrip().rstrip().lower():
             return False
 
         return True
 
     def compare_address_name(self, name, address) -> bool:
-        if str(self.address.value).lstrip().rstrip() not in str(address).lstrip().rstrip():
+        if str(self.address.value).lstrip().rstrip().lower() not in str(address).lstrip().rstrip().lower():
             return False
 
-        if str(self.name.value).lstrip().rstrip() != str(name).lstrip().rstrip():
+        if str(self.name.value).lstrip().rstrip().lower() != str(name).lstrip().rstrip().lower():
             return False
 
         return True
+
+    def same_month(self, month) -> bool:
+        if self.cleaned_end.month == month:
+            return True
+        return False
