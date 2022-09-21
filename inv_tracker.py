@@ -23,7 +23,6 @@ def open_tracker():
     # Worksheet is on default page
     ws = wb.active
 
-
     # Using generator. Skipping the first two rows as they are junk
     rows = ws.rows
     next(rows)
@@ -88,9 +87,6 @@ def delete_rows(sheet, idx: int, amount: int = 1):
             mcr.shrink(bottom=min(mcr.max_row - idx + 1, amount))
         if mcr.min_row > mcr.max_row:
             sheet.merged_cells.ranges.remove(mcr)
-
-def check_current_month_end() -> bool:
-    pass
 
 def create_delete_invoice_object(row) -> Occupant:
     occ = Occupant(
@@ -404,25 +400,3 @@ def maintain_current_new(workbook):
     fix_merged_cells_address(ws, "B", "A")
 
     workbook.save("invoices/september22Outcome.xlsx")
-
-
-# def locate_occupant(occupant : Occupant, worksheet):
-#     pass
-#
-# def locate_ref(ref : int, worksheet):
-#     row_arr = []
-#     counter = 0
-#     for x in worksheet.rows:
-#         if x[5].value == ref:
-#             row_arr.append(x[5].row)
-#             counter += 1
-#
-#     print(counter)
-#     print(row_arr)
-
-# # Credit augustomen STACKOVERFLOW
-# def last_day_of_month(any_day):
-#     # The day 28 exists in every month. 4 days later, it's always next month
-#     next_month = any_day.replace(day=28) + datetime.timedelta(days=4)
-#     # subtracting the number of the current day brings us back one month
-#     return next_month - datetime.timedelta(days=next_month.day)

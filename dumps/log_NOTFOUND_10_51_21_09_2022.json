@@ -1,0 +1,50 @@
+{
+    "0": [
+        "13 St Augustine's Ave",
+        6.0,
+        "Mr Raami Hassan Baadle",
+        238217.0,
+        "Triple",
+        "10/06/2022",
+        null,
+        "£35.00",
+        31,
+        ""
+    ],
+    "1": [
+        "13 St Augustine's Ave",
+        3.0,
+        "Ms Amina Weheliye",
+        238020.0,
+        "Double",
+        "10/06/2022 ",
+        null,
+        "£70.00",
+        31,
+        ""
+    ],
+    "2": [
+        "13 St Augustine's Ave",
+        5.0,
+        "Ms Husseini",
+        237316.0,
+        "Double",
+        "14/06/2022 ",
+        null,
+        "£35.00",
+        31,
+        ""
+    ],
+    "3": [
+        "13 St Augustine's Ave",
+        1.0,
+        "Ms Yvonne Mcqueen",
+        "TBP",
+        "Double",
+        "14/06/2022 ",
+        null,
+        "£70.00",
+        31,
+        ""
+    ]
+}
