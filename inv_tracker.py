@@ -2,21 +2,25 @@ import openpyxl as xl
 from openpyxl.styles import NamedStyle, Font, Border, Side, Alignment
 from openpyxl.utils import get_column_letter
 import datetime
-from settings import INVOICES_FOLDER, MANAGEMENT, TEMPLATE_FOLDER, DATE_FORMAT2, DATE_FORMAT, OCC_LIST, EXCEL_DATE_FORMAT, FORMULA_VAT, FORMULA_TOTAL, DUMPS_FOLDER, FORMULA_NO_NIGHTS, INVOICE_SHEET, CURRENCY_FORMAT, FORMULA_MONTHLY_CHARGE
+from settings import INVOICES_FOLDER, MANAGEMENT, TEMPLATE_FOLDER, DATE_FORMAT2, DATE_FORMAT, OCC_LIST, \
+    EXCEL_DATE_FORMAT, FORMULA_VAT, FORMULA_TOTAL, DUMPS_FOLDER, FORMULA_NO_NIGHTS, INVOICE_SHEET, CURRENCY_FORMAT, \
+    FORMULA_MONTHLY_CHARGE
 from Occupant import Occupant
 import string
 import calendar
 import os
 import json
 
-MONTHS = ["january", "february", "march", "april", "may", "june", "july", "august", "september", "october", "november", "december"]
-KEYTERMS = ["nrpf", "asc", "bhm"] # brent
+MONTHS = ["january", "february", "march", "april", "may", "june", "july", "august", "september", "october", "november",
+          "december"]
+KEYTERMS = ["nrpf", "asc", "bhm"]  # brent
 
 # Adds correct styling to the invoice spreadsheet
 font_table = NamedStyle(name="font_table")
 font_table.font = Font(size=12)
 thin = Side(border_style="thin", color="000000")
 font_table.border = Border(top=thin, left=thin, right=thin, bottom=thin)
+
 
 # opens the Tracker worksheet
 def open_tracker():
@@ -32,22 +36,23 @@ def open_tracker():
 
     return rows
 
+
 # exlcludes those that have certain keyword such as bhm, nrpf etc.
 def exlcude_from_list(string) -> bool:
     if string is not None or len(str(string)) != 0:
         for words in KEYTERMS:
             if str(string).lstrip().rstrip().lower().find(words) != -1:
-                print("Found -> : " + string)
+                # print("Found -> : " + string)
                 return True
 
     return False
 
+
 # creates a list of all the occupants
 def full_populate() -> Occupant:
-
     rows = open_tracker()
 
-    occupants : Occupant = []
+    occupants: Occupant = []
 
     # x are the account holders
     # address, room no, name, ref, ~contact number, room size, start, end , pp night
@@ -60,30 +65,31 @@ def full_populate() -> Occupant:
             continue
 
         occupants.append(Occupant(
-            x[0], # address
-            x[1], # room no
-            x[2], # name
-            x[3], # ref
-            x[5], # room size
-            x[6], # start date
-            x[7], # end date
-            x[8], # price per night
+            x[0],  # address
+            x[1],  # room no
+            x[2],  # name
+            x[3],  # ref
+            x[5],  # room size
+            x[6],  # start date
+            x[7],  # end date
+            x[8],  # price per night
         ))
 
         # print(str(i+3) , x[2].value, x[6].value, x[7].value)
 
-
     return occupants
 
-# FOR DEBUGGING AND QUALITY CHECK
-def save_log(dump : {}, name : str, loc : str):
-    naming_log = str(datetime.datetime.now().strftime('log_'+name+'_%H_%M_%d_%m_%Y.json'))
 
-    with open(DUMPS_FOLDER+loc+ naming_log, "w", encoding="utf-8") as f:
+# FOR DEBUGGING AND QUALITY CHECK
+def save_log(dump: {}, name: str, loc: str):
+    naming_log = str(datetime.datetime.now().strftime('log_' + name + '_%H_%M_%d_%m_%Y.json'))
+
+    with open(DUMPS_FOLDER + loc + naming_log, "w", encoding="utf-8") as f:
         json.dump(dump, f, ensure_ascii=False, indent=1)
 
+
 # Stores all information it has gathered in json format
-def dumping_log(dump : {}, dump_iter : str, x : Occupant):
+def dumping_log(dump: {}, dump_iter: str, x: Occupant):
     dump[dump_iter] = [
         x.address.value,
         x.room.value,
@@ -97,8 +103,9 @@ def dumping_log(dump : {}, dump_iter : str, x : Occupant):
         str(x.cleaned_end),
     ]
 
+
 # creates two seperate lists, those who have an applicable end date and those who don't
-def generate_occupancy_lists(arr : Occupant, debug=False) -> [list, list]:
+def generate_occupancy_lists(arr: Occupant, debug=False) -> [list, list]:
     not_end = []
     end = []
     debug_ending = {}
@@ -108,34 +115,40 @@ def generate_occupancy_lists(arr : Occupant, debug=False) -> [list, list]:
         if x.end_occupancy():
             end.append(x)
             if debug:
-                dumping_log(debug_ending, "ENDING: " + x.name.value + ": " + x.address.value + " -> ROW_INDEX: " + str(i+3), x)
+                dumping_log(debug_ending,
+                            "ENDING: " + x.name.value + ": " + x.address.value + " -> ROW_INDEX: " + str(i + 3), x)
         else:
             not_end.append(x)
             if debug:
-                dumping_log(debug_not, "(NOT) ENDING: " + x.name.value + ": " + x.address.value + " -> ROW_INDEX: " + str(i+3), x)
+                dumping_log(debug_not,
+                            "(NOT) ENDING: " + x.name.value + ": " + x.address.value + " -> ROW_INDEX: " + str(i + 3),
+                            x)
 
     # print(debug_s)
     if debug:
-        save_log(debug_ending, "OCCUPANCY_LIST", OCC_LIST+"ending/")
-        save_log(debug_not, "(NOT)_OCCUPANCY_LIST", OCC_LIST+"not_ending/")
+        save_log(debug_ending, "OCCUPANCY_LIST", OCC_LIST + "ending/")
+        save_log(debug_not, "(NOT)_OCCUPANCY_LIST", OCC_LIST + "not_ending/")
 
     return not_end, end
 
+
 # opens invoice that you want to work on
 def open_invoice(name):
-    wb = xl.load_workbook(filename=INVOICES_FOLDER+name)
+    wb = xl.load_workbook(filename=INVOICES_FOLDER + name)
     # ws = wb[INVOICE_SHEET]
     wb.add_named_style(font_table)
     # return ws
     return wb
 
+
 # compares address, room no, room size, occupant, placement, start, end, no of nights, nightly rate ...
-def compare_row_occupant(occupant : Occupant, row) -> bool:
+def compare_row_occupant(occupant: Occupant, row) -> bool:
     invoice = create_delete_invoice_object(row)
     if occupant.correct_invoice(invoice):
         return True
         # print(occupant.name.value, occupant.end_date.value, occupant.cleaned_end.month)
     return False
+
 
 # delete rows. Fixes rows that have merged cells and shifts them down
 def delete_rows(sheet, idx: int, amount: int = 1):
@@ -154,6 +167,7 @@ def delete_rows(sheet, idx: int, amount: int = 1):
         if mcr.min_row > mcr.max_row:
             sheet.merged_cells.ranges.remove(mcr)
 
+
 # gathers all the occupants and makes them into objects so that it can be used for comparison with tracker
 def create_delete_invoice_object(row) -> Occupant:
     occ = Occupant(
@@ -171,6 +185,7 @@ def create_delete_invoice_object(row) -> Occupant:
 
     occ.end_occupancy()
     return occ
+
 
 # OLD REDUNDANT CODE
 # def clean_with_end_date(occupants, workbook):
@@ -196,7 +211,6 @@ def create_delete_invoice_object(row) -> Occupant:
 
 # fixes all formulas in the table
 def fix_formulas(ws):
-
     # Number of nights
     for nights in ws["I"]:
         val = nights.value
@@ -210,30 +224,33 @@ def fix_formulas(ws):
     update_formula_tallys(ws, "L", FORMULA_VAT)
     update_formula_tallys(ws, "M", FORMULA_TOTAL)
 
+
 # fixes all formulas in the table
-def update_formula_tallys(ws_col, letter : str, formula : str):
+def update_formula_tallys(ws_col, letter: str, formula: str):
     for cell in ws_col[letter]:
         val = cell.value
         if val is None:
             continue
         if val[:4] == "=SUM":
-            cell.value = "=SUM("+letter+"1"+":"+letter+str(cell.row-1)+")"
+            cell.value = "=SUM(" + letter + "1" + ":" + letter + str(cell.row - 1) + ")"
             continue
         if val[0] == "=":
             row_num = str(cell.row)
             cell.value = formula.format(row_num, row_num)
 
+
 # detects what month this invoice is by retrieving the month from the spreadsheet
 def retrieve_invoice_month(worksheet) -> int:
     month = str(worksheet["B6"].value).lower()
     for i, mon in enumerate(MONTHS):
-       if mon == month:
-           return i+1
+        if mon == month:
+            return i + 1
 
     return 1
 
+
 # changes all end dates to the last day of the month
-def replace_date_col(ws_col, year : int, month : int, date : int):
+def replace_date_col(ws_col, year: int, month: int, date: int):
     store = datetime.datetime(year, month, date)
     for cell in ws_col:
         if type(cell).__name__ == "MergedCell":
@@ -242,39 +259,43 @@ def replace_date_col(ws_col, year : int, month : int, date : int):
             cell.value = store
     return store
 
+
 # fixes the formatting of the cells
 def fix_date_cells(ws, f_cell, s_cell):
     temp = s_cell.value
-    ws.unmerge_cells(f_cell.coordinate+":"+s_cell.coordinate)
+    ws.unmerge_cells(f_cell.coordinate + ":" + s_cell.coordinate)
     ws[s_cell.coordinate].number_format = EXCEL_DATE_FORMAT
     ws[s_cell.coordinate].font = ws[s_cell.coordinate].font.copy(size=12)
     ws[s_cell.coordinate].value = temp
+
 
 # fixes the formatting of the cells + rental period
 def fix_merged_cells_dates(ws, to_merge, first_cell):
     for cell in ws[to_merge]:
         # print(ws[first_cell+str(cell.row)].value)
-        f_cell = ws[first_cell+str(cell.row)]
+        f_cell = ws[first_cell + str(cell.row)]
         # if f_cell.value == "Rental Period".lower():
         if str(f_cell.value).lower() == "rental period":
             # print("Need to merge here")
-            ws.merge_cells(first_cell+str(cell.row)+":"+to_merge+str(cell.row))
+            ws.merge_cells(first_cell + str(cell.row) + ":" + to_merge + str(cell.row))
         elif f_cell.is_date:
             for mc in ws.merged_cells.ranges:
                 if f_cell.coordinate in mc:
-                    fix_date_cells(ws, f_cell, ws[to_merge+str(cell.row)])
+                    fix_date_cells(ws, f_cell, ws[to_merge + str(cell.row)])
+
 
 # fixes the formatting of the address column
 def fix_merged_cells_address(ws, merge_col, first_col):
     for cell in ws[merge_col]:
         if type(cell).__name__ == "MergedCell":
-            ws.merge_cells(first_col+str(cell.row)+":"+cell.coordinate)
+            ws.merge_cells(first_col + str(cell.row) + ":" + cell.coordinate)
+
 
 # works out if it needs to give the first day of the month or their start date
 # month -> invoice month    year -> invoice year   date -> tracker occupancy start date
 def determine_invoice_start_date(month, year, date_string):
     date_string = date_string.lstrip().rstrip()
-    date : datetime
+    date: datetime
 
     try:
         date = datetime.datetime.strptime(date_string, DATE_FORMAT)
@@ -288,17 +309,20 @@ def determine_invoice_start_date(month, year, date_string):
         return datetime.datetime(year, month, 1)
     return date
 
+
 # returns the last date of the month of that year
 def num_days_month(month) -> int:
     return calendar.monthrange(2022, month)[1]
 
+
 # automatic loop of adding font styles to the entries
 def update_font_style(ws, row_num, letters):
     row = str(row_num)
-    for cell in ws[row+":"+row]:
+    for cell in ws[row + ":" + row]:
         if get_column_letter(cell.column) == "N":
             break
         cell.style = "font_table"
+
 
 #
 def check_end_append_conditions(month, year, date):
@@ -306,57 +330,58 @@ def check_end_append_conditions(month, year, date):
         return True
     return False
 
+
 # adds occupant information into the row
 # worksheet, row number to insert info, data occupant, address, last date of month
 def insert_occupant_row_information(ws, row_num, occupant, address, last_day_month):
-
     update_font_style(ws, row_num, list(string.ascii_uppercase))
 
     # address
-    ws["A"+str(row_num)].value = str(address).lstrip().rstrip()
-    ws.merge_cells("A"+str(row_num)+":"+"B"+str(row_num))
+    ws["A" + str(row_num)].value = str(address).lstrip().rstrip()
+    ws.merge_cells("A" + str(row_num) + ":" + "B" + str(row_num))
     # ws["A" + str(row_num)].font = ws["A" + str(row_num)].font.copy(size=12)
     # room no
-    ws["C"+str(row_num)].value  = occupant.room.value
+    ws["C" + str(row_num)].value = occupant.room.value
     # room size
-    ws["D"+str(row_num)].value  = occupant.room_size.value
+    ws["D" + str(row_num)].value = occupant.room_size.value
     # occupant
-    ws["E"+str(row_num)].value  = str(occupant.name.value).lstrip().rstrip()
+    ws["E" + str(row_num)].value = str(occupant.name.value).lstrip().rstrip()
     # ref
-    ws["F"+str(row_num)].value  = occupant.ref.value
+    ws["F" + str(row_num)].value = occupant.ref.value
     # start
     # CHECK START DATE. NEEDS TO BE PARSED AS A DATE
     # print(occupant.start_date.value)
-    ws["G"+str(row_num)].value = determine_invoice_start_date(last_day_month.month, last_day_month.year, occupant.start_date.value)
+    ws["G" + str(row_num)].value = determine_invoice_start_date(last_day_month.month, last_day_month.year,
+                                                                occupant.start_date.value)
     # ws["G" + str(row_num)].value = datetime.datetime(2022, 9, 1)
     ws["G" + str(row_num)].number_format = EXCEL_DATE_FORMAT
     # end
-    ws["H"+str(row_num)].value  = last_day_month
-    ws["H"+str(row_num)].number_format = EXCEL_DATE_FORMAT
+    ws["H" + str(row_num)].value = last_day_month
+    ws["H" + str(row_num)].number_format = EXCEL_DATE_FORMAT
     # fix_date_cells(ws, f_cell, ws[to_merge + str(cell.row)])
     # no of nights
-    ws["I"+str(row_num)].value  = FORMULA_NO_NIGHTS.format(row_num, row_num)
+    ws["I" + str(row_num)].value = FORMULA_NO_NIGHTS.format(row_num, row_num)
     # nightly rate
     try:
-        ws["J"+str(row_num)].value  = int(float(occupant.rate.value[1:]))
+        ws["J" + str(row_num)].value = int(float(occupant.rate.value[1:]))
         ws["J" + str(row_num)].number_format = CURRENCY_FORMAT
         # ws["J" + str(row_num)].alignment = Alignment(horizontal="center")
     except:
         # need to add to log
         pass
     # monthly charge
-    ws["K"+str(row_num)].value  = FORMULA_MONTHLY_CHARGE.format(row_num, row_num)
+    ws["K" + str(row_num)].value = FORMULA_MONTHLY_CHARGE.format(row_num, row_num)
     ws["K" + str(row_num)].number_format = CURRENCY_FORMAT
     # vat
-    ws["L"+str(row_num)].value  = FORMULA_VAT.format(row_num)
+    ws["L" + str(row_num)].value = FORMULA_VAT.format(row_num)
     ws["L" + str(row_num)].number_format = CURRENCY_FORMAT
     # total
-    ws["M"+str(row_num)].value  = FORMULA_TOTAL.format(row_num, row_num)
+    ws["M" + str(row_num)].value = FORMULA_TOTAL.format(row_num, row_num)
     ws["M" + str(row_num)].number_format = CURRENCY_FORMAT
+
 
 # adds, changes, deletes occupants from invoices depending on the tracker
 def commit_changes(workbook, debug=False):
-
     # This section works on adding new occupants to the tracker
 
     ws = workbook[INVOICE_SHEET]
@@ -413,12 +438,12 @@ def commit_changes(workbook, debug=False):
             for cell in ws["A"]:
                 # if address is here
                 if x.compare_address(str(cell.value).lower()):
-                # if x.compare_address(cell.value):
+                    # if x.compare_address(cell.value):
                     address_found = True
                     addr_row = cell.row
 
                     if x.compare_name(ws["E" + str(cell.row)].value.lower()):
-                    # if x.compare_name(ws["E"+str(cell.row)].value):
+                        # if x.compare_name(ws["E"+str(cell.row)].value):
                         name_exists = True
                         # print("----------Same NAME + ADDR")
                     elif addr_row > 0 and name_exists:
@@ -437,7 +462,7 @@ def commit_changes(workbook, debug=False):
                     ws.insert_rows(addr_row + 1)
                     insert_occupant_row_information(ws, addr_row + 1, x, ws[addr_row][0].value, last_day_month)
                     if debug:
-                        dumping_log(dump_added, x.name.value +": " + x.address.value, x)
+                        dumping_log(dump_added, x.name.value + ": " + x.address.value, x)
                     addr_row = 0
                     name_exists = False
                     address_found = True
@@ -447,7 +472,7 @@ def commit_changes(workbook, debug=False):
             if not address_found and debug:
                 # print("@@@@@@@@@@@@@@@@@@@@@@@@@@@@ ADDRESS NOT FOUND: " + x.address.value)
                 dump_iter += 1
-                dumping_log(dump, str(dump_iter) + ": "+ x.address.value + ": " + x.name.value, x)
+                dumping_log(dump, str(dump_iter) + ": " + x.address.value + ": " + x.name.value, x)
 
             address_found = False
 
@@ -467,7 +492,7 @@ def commit_changes(workbook, debug=False):
         # check if they are currently in the invoice
         for x in ws["E"]:
             if str(x.value).lower() == str(occupant.name.value).lstrip().rstrip().lower():
-            # if x.value == occupant.name.value.lstrip().rstrip():
+                # if x.value == occupant.name.value.lstrip().rstrip():
                 found_at_least_once = True
                 # delete row if in previous month
                 if compare_row_occupant(occupant, ws[x.row]):
@@ -477,14 +502,16 @@ def commit_changes(workbook, debug=False):
                         not_found = False
                         if debug:
                             naming_log = datetime.datetime.now().strftime('log_DEL_ROW_%H_%M_%d_%m_%Y.json')
-                            dumping_log(dump_remove_clean, occupant.name.value + ": " + occupant.address.value, occupant)
+                            dumping_log(dump_remove_clean, occupant.name.value + ": " + occupant.address.value,
+                                        occupant)
                     # update ending date if they already exist
                     else:
                         # print("UPDATE ROW: ", occupant.name.value, ws["H"+str(x.row)].value.strftime(DATE_FORMAT), "--> ", occupant.cleaned_end.strftime(DATE_FORMAT))
                         ws["H" + str(x.row)].value = occupant.cleaned_end
                         not_found = False
                         if debug:
-                            dumping_log(dump_change_clean, occupant.name.value + ": " + occupant.address.value, occupant)
+                            dumping_log(dump_change_clean, occupant.name.value + ": " + occupant.address.value,
+                                        occupant)
 
         # if they need to be added as a new entry and ending this month
         if not_found and check_end_append_conditions(worksheet_month, 2022, occupant.cleaned_end):
@@ -494,7 +521,7 @@ def commit_changes(workbook, debug=False):
                 if occupant.compare_address(cell.value):
                     # we will insert row above the first address
                     ws.insert_rows(cell.row)
-                    insert_occupant_row_information(ws, cell.row-1, occupant, cell.value, occupant.cleaned_end)
+                    insert_occupant_row_information(ws, cell.row - 1, occupant, cell.value, occupant.cleaned_end)
                     break
 
         if not found_at_least_once and debug:
@@ -507,7 +534,6 @@ def commit_changes(workbook, debug=False):
     save_log(dump_remove_clean, "DEL_ROW", "maindel/del/")
     save_log(dump_change_clean, "UPDATING_END_DATE", "maindel/maintain/")
     save_log(dump_clean_fail, "NOT_FOUND_MAINDEL", "maindel/not_found/")
-
 
     fix_formulas(ws)
 
