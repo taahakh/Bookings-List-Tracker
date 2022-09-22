@@ -4,7 +4,6 @@ from settings import DATE_FORMAT, DATE_FORMAT2
 class Occupant():
 
     cleaned_end = ""
-    # cleaned_end : datetime.datetime
 
     def __init__(self, address, room, name, ref, room_size, start_date, end_date, rate, number_of_nights=31):
         self.address = address
@@ -70,12 +69,6 @@ class Occupant():
         # room size
         if self.room_size.value.lstrip().rstrip().lower() not in invoice.room_size.value.lstrip().rstrip().lower():
             return False
-
-        # print("pass4")
-        # end date
-        # STANDARDISE END DATE
-        # if self.cleaned_end != invoice.cleaned_end:
-        #     return False
 
         # nightly rate
         # some nightly rates are missing
